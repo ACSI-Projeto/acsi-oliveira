@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Emissão de Multas</title>
+    <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 24px;
+            }
+
+            .container {
+                max-width: 600px;
+                width: 100%;
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                padding: 40px;
+                color: #1f2937;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 32px;
+                padding-bottom: 20px;
+                border-bottom: 3px solid #3b82f6;
+            }
+
+            h2 {
+                margin: 0 0 8px 0;
+                font-size: 28px;
+                letter-spacing: 0.02em;
+                color: #1e3a8a;
+                font-weight: 700;
+            }
+
+            .subtitle {
+                color: #6b7280;
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .form-group {
+                margin-bottom: 24px;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+                color: #374151;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            input[type="text"],
+            select {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                font-size: 15px;
+                transition: all 0.3s ease;
+                background: white;
+                color: #1f2937;
+            }
+
+            input[type="text"]:focus,
+            select:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            input[type="file"] {
+                display: none;
+            }
+
+            .file-upload-wrapper {
+                margin-bottom: 16px;
+            }
+
+            .file-upload-label {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 14px 24px;
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                border: none;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .file-upload-label:hover {
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            }
+
+            .file-upload-label.upload-btn::before {
+                content: "📁";
+                font-size: 18px;
+            }
+
+            .file-upload-label.camera-btn::before {
+                content: "📷";
+                font-size: 18px;
+            }
+
+            button {
+                width: 100%;
+                padding: 16px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-top: 12px;
+            }
+
+            button:hover {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            }
+
+            button:active {
+                transform: translateY(0);
+            }
+
+            button.preview-btn {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                margin-top: 8px;
+            }
+
+            button.preview-btn:hover {
+                background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+                box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            }
+
+            button.submit-btn {
+                margin-top: 24px;
+                font-size: 18px;
+                padding: 18px;
+            }
+
+            #preview {
+                display: none;
+                width: 100%;
+                max-height: 400px;
+                object-fit: contain;
+                border-radius: 12px;
+                margin: 20px 0;
+                border: 3px solid #e5e7eb;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+
+            #result {
+                margin-top: 24px;
+                padding: 20px;
+                background: #f3f4f6;
+                border-radius: 8px;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                color: #1f2937;
+                border-left: 4px solid #3b82f6;
+                max-height: 300px;
+                overflow-y: auto;
+                display: none;
+            }
+
+            #result:not(:empty) {
+                display: block;
+            }
+
+            .divider {
+                height: 2px;
+                background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+                margin: 32px 0;
+            }
+
+            .section-title {
+                font-size: 16px;
+                font-weight: 700;
+                color: #1e3a8a;
+                margin: 28px 0 16px 0;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                border-bottom: 2px solid #3b82f6;
+                padding-bottom: 8px;
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+
+            @media (max-width: 640px) {
+                .container {
+                    padding: 24px;
+                }
+
+                h2 {
+                    font-size: 24px;
+                }
+
+                button,
+                .file-upload-label {
+                    font-size: 13px;
+                    padding: 12px 20px;
+                }
+
+                .info-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* Animação de loading */
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+
+            .loading {
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Sistema de Emissão de Multas</h2>
+            <p class="subtitle">Reconhecimento automático de matrículas</p>
+        </div>
+
+        <div class="section-title">Informações da Multa</div>
+        
+        <div class="form-group">
+            <label>Razão da Multa:</label>
+            <select id="razaoPrimariaMulta">
+                <option value="ESTACIONAMENTO_PROIBIDO">Estacionamento Proibido</option>
+                <option value="ESTACIONAMENTO_IRREGULAR">Estacionamento Irregular</option>
+                <option value="TEMPO_EXCEDIDO">Tempo de Estacionamento Excedido</option>
+                <option value="SEM_PAGAMENTO">Estacionamento sem Pagamento</option>
+                <option value="ZONA_RESERVADA">Estacionamento em Zona Reservada</option>
+                <option value="OBSTRUCAO_VIA">Obstrução de Via</option>
+                <option value="LUGAR_DEFICIENTES">Lugar para Deficientes</option>
+                <option value="LUGAR_CARGAS_DESCARGAS">Lugar de Cargas e Descargas</option>
+                <option value="OUTRAS">Outras Infrações</option>
+            </select>
+        </div>
+
+        <div class="info-grid">
+            <div class="form-group">
+                <label>Zona Tarifária:</label>
+                <select id="zonaTarifaria" onchange="updateLugarOptions()">
+                    <option value="ZONA_A">Zona A (0-20)</option>
+                    <option value="ZONA_B">Zona B (21-40)</option>
+                    <option value="ZONA_C">Zona C (41-60)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Lugar:</label>
+                <select id="lugarId"></select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>ID Fiscal:</label>
+            <input type="text" id="idFiscal" value="FISCAL_1" placeholder="Insira o ID do fiscal">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">📸 Captura de Imagem</div>
+
+        <div class="file-upload-wrapper">
+            <label for="uploadInput" class="file-upload-label upload-btn">
+                Selecionar Imagem
+            </label>
+            <input type="file" id="uploadInput" accept="image/*" />
+        </div>
+
+        <button class="preview-btn" onclick="previewUpload()">👁️ Pré-visualizar Upload</button>
+
+        <div style="margin: 16px 0; text-align: center; color: #6b7280; font-weight: 600;">OU</div>
+
+        <div class="file-upload-wrapper">
+            <label for="cameraInput" class="file-upload-label camera-btn">
+                Tirar Foto (Câmara)
+            </label>
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" />
+        </div>
+
+        <img id="preview" alt="Pré-visualização da imagem" />
+
+        <button class="submit-btn" onclick="sendToAPI()">Processar e Enviar</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const apiURL = "http://localhost:8000/ocr";
+
+        function previewUpload() {
+            const file = document.getElementById("uploadInput").files[0];
+            if (!file) {
+                alert("Por favor, selecione uma imagem primeiro!");
+                return;
+            }
+
+            const img = document.getElementById("preview");
+            img.src = URL.createObjectURL(file);
+            img.style.display = "block";
+
+            // Copiar para o input da camera para reutilizar
+            document.getElementById("cameraInput").files = document.getElementById("uploadInput").files;
+        }
+
+        document.getElementById("cameraInput").addEventListener("change", (evt) => {
+            const file = evt.target.files[0];
+            if (!file) return;
+
+            const img = document.getElementById("preview");
+            img.src = URL.createObjectURL(file);
+            img.style.display = "block";
+        });
+
+        function updateLugarOptions() {
+            const zona = document.getElementById("zonaTarifaria").value;
+            const lugarSelect = document.getElementById("lugarId");
+            lugarSelect.innerHTML = "";
+
+            let start, end;
+            if (zona === "ZONA_A") { start = 0; end = 20; }
+            else if (zona === "ZONA_B") { start = 21; end = 40; }
+            else if (zona === "ZONA_C") { start = 41; end = 60; }
+
+            for (let i = start; i <= end; i++) {
+                const opt = document.createElement("option");
+                opt.value = `PRAÇA-${String(i).padStart(3, "0")}`;
+                opt.textContent = opt.value;
+                lugarSelect.appendChild(opt);
+            }
+        }
+
+        // Inicializar ao carregar a página
+        window.addEventListener("load", updateLugarOptions);
+
+        async function sendToAPI() {
+            const input = document.getElementById("cameraInput");
+            if (!input.files[0]) {
+                alert("❌ Escolhe uma imagem ou tira uma foto primeiro!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", input.files[0]);
+            formData.append("razaoPrimariaMulta", document.getElementById("razaoPrimariaMulta").value);
+            formData.append("lugarId", document.getElementById("lugarId").value);
+            formData.append("zonaTarifaria", document.getElementById("zonaTarifaria").value);
+            formData.append("idFiscal", document.getElementById("idFiscal").value);
+
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerText = "⏳ A processar... Por favor aguarde.";
+            resultDiv.classList.add("loading");
+            resultDiv.style.display = "block";
+
+            try {
+                const res = await fetch(apiURL, {
+                    method: "POST",
+                    body: formData
+                });
+
+                resultDiv.classList.remove("loading");
+                
+                // Verificar se a resposta tem conteúdo
+                const contentType = res.headers.get("content-type");
+                const text = await res.text();
+                
+                console.log("Status:", res.status);
+                console.log("Content-Type:", contentType);
+                console.log("Response text:", text);
+                
+                if (!text) {
+                    resultDiv.innerText = "⚠️ API retornou resposta vazia\n\nStatus: " + res.status;
+                    return;
+                }
+                
+                // Tentar fazer parse do JSON
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    resultDiv.innerText = "⚠️ Resposta não é JSON válido\n\nStatus: " + res.status + "\n\nResposta:\n" + text;
+                    return;
+                }
+                
+                if (res.ok) {
+                    resultDiv.innerText = "✅ Sucesso!\n\n" + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.innerText = "⚠️ Erro na resposta:\n\n" + JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                resultDiv.classList.remove("loading");
+                resultDiv.innerText = "❌ Erro ao comunicar com a API.\n\n" + err.message + "\n\n" + err.stack;
+            }
+        }
+    </script>
+
+</body>
+</html>

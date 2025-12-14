@@ -1,0 +1,6 @@
+services:
+  multas-validas:
+    build: .
+    image: multas-validas
+    ports:
+      - "8000:8000"

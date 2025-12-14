@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+RUN apt-get update && \
+    apt-get install -y tesseract-ocr libtesseract-dev libgl1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /yolo-app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+COPY anpr_v8.pt .
+COPY static ./static
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
