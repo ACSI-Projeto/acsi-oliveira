@@ -5,3 +5,4 @@ ultralytics
 python-multipart
 easyocr
 opencv-python-headless
+kafka-python

@@ -4,3 +4,9 @@ services:
     image: multas-validas
     ports:
       - "8000:8000"
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    external: true

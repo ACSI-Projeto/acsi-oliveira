@@ -9,6 +9,8 @@ import numpy as np
 import easyocr
 from datetime import datetime, timezone
 import uuid
+import json
+from kafka import KafkaProducer
 
 class ANPR_V8:
     def __init__(self, model_path):
@@ -80,6 +82,7 @@ async def ocr_endpoint(
     timestamp = datetime.now(timezone.utc).isoformat()
 
     multa = {
+        "tipo": "multa",
         "idMulta": str(uuid.uuid4()),
         "matricula": matricula,
         "razaoPrimariaMulta": razaoPrimariaMulta,
@@ -90,14 +93,16 @@ async def ocr_endpoint(
         "origem": "APP_FISCAL",
         "tipoDeteccao": "OCR",
         "idEvidenciaPrimaria": None,
-        "observacoes": f"Deteção automática OCR (confiança={conf:.2f})",
-        "ocrRawText": raw_text,
-        "boundingBox": [x1, y1, x2, y2],
+        "confianca": round(conf, 2),
     }
 
-    # Enviar para Kafka (código comentado)
-    #producer = KafkaProducer(bootstrap_servers='localhost:9092',
-    #producer.send(TOPIC_VALIDAR, multa)
-    #producer.flush()
+    producer = KafkaProducer(
+        bootstrap_servers="kafka:9092",
+        value_serializer=lambda v: json.dumps(v).encode(
+            "utf-8"
+        ),  # serializa o dict/objeto em JSON
+    )
+    producer.send("detalhes-multa", value=multa)
+    producer.flush()
 
     return multa
