@@ -1,18 +1,22 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from starlette.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse
-from ultralytics import YOLO
-from PIL import Image
 import io
+import json
 import re
-import numpy as np
-import easyocr
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
+
+import easyocr
+import numpy as np
+from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from kafka import KafkaProducer
+from PIL import Image
+from starlette.staticfiles import StaticFiles
+from ultralytics.models import YOLO
+
 
 class ANPR_V8:
     def __init__(self, model_path):
-        self.model = YOLO(model_path)
+        self.model = YOLO(model_path)  # type: ignore
 
     def detect(self, img, threshold=0.3):
         results = self.model(img)
@@ -27,25 +31,26 @@ class ANPR_V8:
                     plates.append((x1, y1, x2, y2, conf))
         return plates
 
+
 app = FastAPI()
 
 # servir ficheiros estáticos em /static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
 @app.get("/")
 async def read_index():
     return FileResponse("static/index.html")
 
+
 # modelo YOLO de matrículas
 detector = ANPR_V8("anpr_v8.pt")
-reader = easyocr.Reader(['pt'])
+reader = easyocr.Reader(["pt"])
+
 
 def extrair_matricula_ocr(img: Image.Image):
     np_img = np.array(img)
-    results = reader.readtext(
-        np_img,
-        allowlist='.-0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
-    )
+    results = reader.readtext(np_img, allowlist=".-0123456789ABCDEFGHJKLMNPQRSTUVWXYZ")
     text = "".join([r[1] for r in results])
 
     # 1) limpar lixo
@@ -57,6 +62,7 @@ def extrair_matricula_ocr(img: Image.Image):
 
     matricula = match.group(1) if match else None
     return text, matricula
+
 
 @app.post("/ocr")
 async def ocr_endpoint(
@@ -80,6 +86,7 @@ async def ocr_endpoint(
     timestamp = datetime.now(timezone.utc).isoformat()
 
     multa = {
+        "tipo": "multa",
         "idMulta": str(uuid.uuid4()),
         "matricula": matricula,
         "razaoPrimariaMulta": razaoPrimariaMulta,
@@ -90,14 +97,16 @@ async def ocr_endpoint(
         "origem": "APP_FISCAL",
         "tipoDeteccao": "OCR",
         "idEvidenciaPrimaria": None,
-        "observacoes": f"Deteção automática OCR (confiança={conf:.2f})",
-        "ocrRawText": raw_text,
-        "boundingBox": [x1, y1, x2, y2],
+        "confianca": round(conf, 2),
     }
 
-    # Enviar para Kafka (código comentado)
-    #producer = KafkaProducer(bootstrap_servers='localhost:9092',
-    #producer.send(TOPIC_VALIDAR, multa)
-    #producer.flush()
+    producer = KafkaProducer(
+        bootstrap_servers="localhost:29092",
+        value_serializer=lambda v: json.dumps(v).encode(
+            "utf-8"
+        ),  # serializa o dict/objeto em JSON
+    )
+    producer.send("detalhes-multa", value=multa)
+    producer.flush()
 
     return multa
